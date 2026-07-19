@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getCurrentUser } from "@/data/users";
+import { useCurrentUser } from "@/stores/auth-store";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ const templates = [
 export function CreateServerModal({ open, onClose }: Props) {
   const [step, setStep] = useState<"template" | "customize">("template");
   const [name, setName] = useState("");
-  const user = getCurrentUser();
+  const user = useCurrentUser();
   const resetTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(resetTimer.current), []);
@@ -76,7 +76,7 @@ export function CreateServerModal({ open, onClose }: Props) {
                 <button
                   key={t.id}
                   onClick={() => {
-                    setName(`${user.displayName}'s ${t.label}`);
+                    if (user) setName(`${user.displayName}'s ${t.label}`);
                     setStep("customize");
                   }}
                   className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left font-semibold transition-colors hover:border-brand hover:bg-accent/40"
@@ -118,7 +118,7 @@ export function CreateServerModal({ open, onClose }: Props) {
                 id="server-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={`${user.displayName}'s server`}
+                placeholder={`${user?.displayName ?? "My"}'s server`}
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">

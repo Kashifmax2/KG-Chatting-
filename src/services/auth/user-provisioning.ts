@@ -37,6 +37,7 @@ import type { UserDoc } from "@/types/firestore";
 import { run } from "@/services/service-utils";
 import { logger } from "@/utils/logger";
 import { toUsernameLower, generateDiscriminator } from "@/services/users/username";
+import { defaultPrivacy } from "@/services/auth/auth-mapper";
 
 /** Static default avatar asset (see AI/00_Project_Assets.md). */
 export const DEFAULT_AVATAR_PATH = "/icons/default-avatar.png";
@@ -88,6 +89,7 @@ export async function provisionNewUser(
     bannerColor: DEFAULT_BANNER_COLOR,
     status: "online",
     badges: [],
+    privacy: defaultPrivacy(),
     ...(avatarUrl ? { avatarUrl } : {}),
   };
 

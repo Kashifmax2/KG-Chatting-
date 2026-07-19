@@ -35,7 +35,14 @@ export function ProfilePopupCard({
         className
       )}
     >
-      <div className="h-20" style={{ backgroundColor: user.bannerColor }} />
+      <div
+        className="h-20 bg-cover bg-center"
+        style={
+          user.bannerUrl
+            ? { backgroundImage: `url(${user.bannerUrl})` }
+            : { backgroundColor: user.bannerColor }
+        }
+      />
       <div className="px-4 pb-4">
         <div className="-mt-10 mb-3 flex items-end justify-between">
           <UserAvatar

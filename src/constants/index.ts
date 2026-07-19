@@ -16,6 +16,17 @@ export const LIMITS = {
   message: { max: 4000 },
   serverName: { min: 2, max: 100 },
   channelName: { min: 1, max: 100 },
+  url: { max: 256 },
+  socialLabel: { max: 32 },
+  socialLinks: { max: 5 },
+  country: { max: 56 },
+  language: { max: 56 },
+} as const;
+
+/** Profile-related rules. */
+export const PROFILE = {
+  /** Minimum time between username changes ("cannot change too frequently"). */
+  usernameChangeCooldownMs: 14 * 24 * 60 * 60 * 1000, // 14 days
 } as const;
 
 /** Upload constraints (bytes). Enforced client-side and in Storage rules. */
@@ -27,6 +38,10 @@ export const UPLOAD = {
   avatar: {
     maxBytes: 4 * 1024 * 1024, // 4 MB
     accept: ["image/png", "image/jpeg", "image/webp"],
+  },
+  banner: {
+    maxBytes: 8 * 1024 * 1024, // 8 MB
+    accept: ["image/png", "image/jpeg", "image/gif", "image/webp"],
   },
   video: {
     maxBytes: 50 * 1024 * 1024, // 50 MB

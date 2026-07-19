@@ -24,10 +24,24 @@ service cloud.firestore {
 
     // ---- Users -------------------------------------------------------------
     // Any signed-in user may read profiles; only the owner may write their own.
+    //
+    // Profile editing (Phase 05) writes directly to this doc, so updates are
+    // guarded field-by-field: identity/trust fields the client must never set
+    // itself (uid, email, verification, discriminator, badges, createdAt) are
+    // frozen. Everything else (display name, bio, avatar/banner, colours,
+    // socials, privacy, username + its lower/last-changed bookkeeping) is the
+    // owner's to change. Username uniqueness is enforced client-side; there is
+    // no cross-document uniqueness primitive in rules.
+    function userImmutableUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['uid', 'email', 'emailVerified', 'discriminator',
+                 'badges', 'createdAt']);
+    }
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId);
+      allow update: if isOwner(userId) && userImmutableUnchanged();
+      allow delete: if isOwner(userId);
     }
 
     // ---- Settings ----------------------------------------------------------

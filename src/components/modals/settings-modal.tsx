@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -11,9 +11,10 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { getCurrentUser } from "@/data/users";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore, useCurrentUser } from "@/stores/auth-store";
+import { useProfileStore } from "@/stores/profile-store";
 import { useTheme } from "@/app/providers/theme-provider";
+import { EditProfileModal } from "@/components/modals/edit-profile-modal";
 import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -43,6 +44,14 @@ type SectionId = (typeof sections)[number]["id"];
 export function SettingsModal({ open, onClose }: Props) {
   const [active, setActive] = useState<SectionId>("account");
   const logout = useAuthStore((s) => s.logout);
+  const uid = useAuthStore((s) => s.user?.id);
+  const subscribe = useProfileStore((s) => s.subscribe);
+
+  // Keep the profile live while settings are open so edits reflect instantly.
+  useEffect(() => {
+    if (!open || !uid) return;
+    return subscribe(uid);
+  }, [open, uid, subscribe]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -122,14 +131,23 @@ export function SettingsModal({ open, onClose }: Props) {
 }
 
 function SectionContent({ id }: { id: SectionId }) {
-  const user = getCurrentUser();
+  const user = useCurrentUser();
+  const [editing, setEditing] = useState(false);
 
   if (id === "account") {
+    if (!user) return null;
     return (
       <div>
         <h2 className="mb-4 text-xl font-bold">My Account</h2>
         <div className="overflow-hidden rounded-xl border border-border">
-          <div className="h-24" style={{ backgroundColor: user.bannerColor }} />
+          <div
+            className="h-24 bg-cover bg-center"
+            style={
+              user.bannerUrl
+                ? { backgroundImage: `url(${user.bannerUrl})` }
+                : { backgroundColor: user.bannerColor }
+            }
+          />
           <div className="flex items-center gap-3 px-4 pb-4">
             <UserAvatar
               user={user}
@@ -142,11 +160,12 @@ function SectionContent({ id }: { id: SectionId }) {
               <span className="text-lg font-bold">{user.displayName}</span>
               <UserBadges badges={user.badges} />
             </div>
-            <Button size="sm" className="mb-1 ml-auto mt-2">
+            <Button size="sm" className="mb-1 ml-auto mt-2" onClick={() => setEditing(true)}>
               Edit User Profile
             </Button>
           </div>
         </div>
+        <EditProfileModal open={editing} onClose={() => setEditing(false)} />
       </div>
     );
   }

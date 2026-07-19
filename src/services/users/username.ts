@@ -11,6 +11,8 @@
  * can always race. These helpers keep the common case fast and friendly.
  */
 import { userService } from "@/services/users/user.service";
+import { PROFILE } from "@/constants";
+import type { Timestamp } from "firebase/firestore";
 
 /** Names we never let a user claim — routes, roles, and system identities. */
 const RESERVED_USERNAMES = new Set<string>([
@@ -102,4 +104,27 @@ export async function checkUsernameAvailable(
     return { ok: false, message: existing.error.message };
   }
   return { ok: true, message: "" };
+}
+
+/**
+ * Enforces the "username cannot change too frequently" rule. Returns how long
+ * remains in the cooldown, given when it last changed. `null`/absent means the
+ * username has never been changed and a change is allowed immediately.
+ */
+export function usernameChangeRemainingMs(
+  lastChangedAt: Timestamp | null | undefined,
+  now: number = Date.now()
+): number {
+  if (!lastChangedAt || typeof lastChangedAt.toDate !== "function") return 0;
+  const elapsed = now - lastChangedAt.toDate().getTime();
+  const remaining = PROFILE.usernameChangeCooldownMs - elapsed;
+  return remaining > 0 ? remaining : 0;
+}
+
+/** Human-friendly "in N days/hours" phrasing for a remaining-cooldown span. */
+export function formatCooldown(ms: number): string {
+  const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+  if (days >= 1) return `${days} day${days === 1 ? "" : "s"}`;
+  const hours = Math.ceil(ms / (60 * 60 * 1000));
+  return `${hours} hour${hours === 1 ? "" : "s"}`;
 }

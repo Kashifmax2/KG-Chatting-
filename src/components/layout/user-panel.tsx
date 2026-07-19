@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Headphones, Mic, MicOff, Settings, Volume2, VolumeX } from "lucide-react";
-import { getCurrentUser } from "@/data/users";
+import { useCurrentUser } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,14 @@ import { cn } from "@/lib/utils";
 
 /** The persistent account controls pinned to the bottom of the channel sidebar. */
 export function UserPanel() {
-  const user = getCurrentUser();
+  const user = useCurrentUser();
   const openModal = useUIStore((s) => s.openModal);
   const [muted, setMuted] = useState(false);
   const [deafened, setDeafened] = useState(false);
+
+  // Rendered only inside the authenticated tree, so `user` is populated in
+  // practice; guard anyway for the brief hydration window on hard refresh.
+  if (!user) return null;
 
   return (
     <div className="flex items-center gap-1 bg-elevated/60 px-2 py-2">

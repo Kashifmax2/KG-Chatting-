@@ -15,6 +15,8 @@ import type {
   FriendStatus,
   NotificationType,
   PresenceStatus,
+  ProfilePrivacy,
+  SocialLink,
   UserBadge,
 } from "@/types";
 
@@ -33,12 +35,28 @@ export interface UserDoc extends BaseDoc {
   email: string;
   emailVerified: boolean;
   avatarUrl?: string;
+  /** Cloudinary public id of the current avatar, kept so it can be replaced/removed. */
+  avatarPublicId?: string;
+  /** Uploaded banner image (Cloudinary); the UI falls back to `bannerColor` when unset. */
+  bannerUrl?: string;
+  /** Cloudinary public id of the current banner image. */
+  bannerPublicId?: string;
   bannerColor: string;
+  /** Cosmetic accent colour for the profile (CSS colour string). */
+  accentColor?: string;
   status: PresenceStatus; // last-known presence, mirrored from RTDB
   customStatus?: string;
   bio?: string;
   pronouns?: string;
+  country?: string;
+  language?: string;
+  website?: string;
+  socialLinks?: SocialLink[];
   badges: UserBadge[];
+  /** Profile privacy controls. Seeded permissively at signup. */
+  privacy: ProfilePrivacy;
+  /** When the username was last changed; gates change frequency (Phase 05). */
+  usernameLastChangedAt?: Timestamp;
   /** Last time the user was seen online; seeded at signup (Phase 05/07 read this). */
   lastSeen: Timestamp;
 }

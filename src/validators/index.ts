@@ -106,6 +106,55 @@ export function validateBio(value: string): ValidationResult {
   return ok;
 }
 
+export function validateCustomStatus(value: string): ValidationResult {
+  if (value.length > LIMITS.customStatus.max)
+    return fail(`Custom status must be at most ${LIMITS.customStatus.max} characters.`);
+  return ok;
+}
+
+export function validatePronouns(value: string): ValidationResult {
+  // Pronouns are optional and free-form; only bound the length.
+  if (value.length > LIMITS.displayName.max)
+    return fail(`Pronouns must be at most ${LIMITS.displayName.max} characters.`);
+  return ok;
+}
+
+// Accept common CSS colour forms: hex, hsl(a), rgb(a). Empty is allowed (unset).
+const COLOR_RE =
+  /^(#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})|(hsl|hsla|rgb|rgba)\([^)]*\))$/;
+
+export function validateColor(value: string): ValidationResult {
+  const v = value.trim();
+  if (!v) return ok;
+  if (!COLOR_RE.test(v)) return fail("Enter a valid colour value.");
+  return ok;
+}
+
+/**
+ * Validates an optional URL. Empty is allowed (means "unset"). Requires an
+ * http/https scheme so links are safe to render as anchors.
+ */
+export function validateUrl(value: string): ValidationResult {
+  const v = value.trim();
+  if (!v) return ok;
+  if (v.length > LIMITS.url.max)
+    return fail(`Link must be at most ${LIMITS.url.max} characters.`);
+  let parsed: URL;
+  try {
+    parsed = new URL(v);
+  } catch {
+    return fail("Enter a valid URL (including https://).");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+    return fail("Links must start with http:// or https://.");
+  return ok;
+}
+
+export function validateShortText(value: string, max: number, label: string): ValidationResult {
+  if (value.length > max) return fail(`${label} must be at most ${max} characters.`);
+  return ok;
+}
+
 export function validateMessage(value: string): ValidationResult {
   const v = value.trim();
   if (!v) return fail("Message cannot be empty.");

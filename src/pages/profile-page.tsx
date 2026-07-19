@@ -1,19 +1,31 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Pencil } from "lucide-react";
-import { getCurrentUser } from "@/data/users";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore, useCurrentUser } from "@/stores/auth-store";
+import { useProfileStore } from "@/stores/profile-store";
 import { HomeSidebar } from "@/components/layout/home-sidebar";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { UserBadges } from "@/components/shared/user-badges";
 import { ProfilePopupCard } from "@/components/shared/profile-popup";
 import { StatusDot } from "@/components/shared/status-dot";
+import { EditProfileModal } from "@/components/modals/edit-profile-modal";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
-  const user = getCurrentUser();
+  const user = useCurrentUser();
   const logout = useAuthStore((s) => s.logout);
+  const subscribe = useProfileStore((s) => s.subscribe);
+  const [editing, setEditing] = useState(false);
+
+  // Keep the signed-in user's profile live while this page is open.
+  useEffect(() => {
+    if (!user?.id) return;
+    return subscribe(user.id);
+  }, [user?.id, subscribe]);
+
+  if (!user) return null;
 
   return (
     <div className="flex h-full min-w-0 flex-1">
@@ -39,7 +51,14 @@ export default function ProfilePage() {
               animate={{ opacity: 1, y: 0 }}
               className="overflow-hidden rounded-xl border border-border bg-card"
             >
-              <div className="h-28" style={{ backgroundColor: user.bannerColor }} />
+              <div
+                className="h-28 bg-cover bg-center"
+                style={
+                  user.bannerUrl
+                    ? { backgroundImage: `url(${user.bannerUrl})` }
+                    : { backgroundColor: user.bannerColor }
+                }
+              />
               <div className="px-5 pb-5">
                 <div className="-mt-12 mb-3 flex items-end justify-between">
                   <UserAvatar
@@ -49,7 +68,7 @@ export default function ProfilePage() {
                     className="h-24 w-24 ring-[6px] ring-card"
                     ringClassName="border-card"
                   />
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => setEditing(true)}>
                     <Pencil className="h-4 w-4" />
                     Edit Profile
                   </Button>
@@ -65,14 +84,31 @@ export default function ProfilePage() {
 
                 <Separator className="my-4" />
 
-                <Field label="Display Name" value={user.displayName} />
-                <Field label="Username" value={user.username} />
-                <Field label="Pronouns" value={user.pronouns ?? "Not set"} />
+                <Field
+                  label="Display Name"
+                  value={user.displayName}
+                  onEdit={() => setEditing(true)}
+                />
+                <Field
+                  label="Username"
+                  value={user.username}
+                  onEdit={() => setEditing(true)}
+                />
+                <Field
+                  label="Pronouns"
+                  value={user.pronouns || "Not set"}
+                  onEdit={() => setEditing(true)}
+                />
                 <Field
                   label="Status"
                   value={<StatusDot status={user.status} withLabel />}
+                  onEdit={() => setEditing(true)}
                 />
-                <Field label="About Me" value={user.bio ?? "Not set"} />
+                <Field
+                  label="About Me"
+                  value={user.bio || "Not set"}
+                  onEdit={() => setEditing(true)}
+                />
               </div>
             </motion.div>
 
@@ -86,6 +122,8 @@ export default function ProfilePage() {
           </div>
         </ScrollArea>
       </div>
+
+      <EditProfileModal open={editing} onClose={() => setEditing(false)} />
     </div>
   );
 }
@@ -93,9 +131,11 @@ export default function ProfilePage() {
 function Field({
   label,
   value,
+  onEdit,
 }: {
   label: string;
   value: React.ReactNode;
+  onEdit: () => void;
 }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-4 rounded-lg bg-rail px-4 py-3">
@@ -105,7 +145,7 @@ function Field({
         </p>
         <div className="mt-0.5 truncate text-sm">{value}</div>
       </div>
-      <Button size="sm" variant="secondary">
+      <Button size="sm" variant="secondary" onClick={onEdit}>
         Edit
       </Button>
     </div>

@@ -31,6 +31,8 @@ interface AuthState {
   refreshVerification: () => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
+  /** Replace the cached user (e.g. from the realtime profile subscription). */
+  setUser: (user: User) => void;
 
   /** Start the Firebase auth listener. Call once at app boot. */
   init: () => () => void;
@@ -134,6 +136,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
+  setUser: (user) => set({ user }),
+
   init: () => {
     // Subscribe to Firebase auth-state changes. Returns the unsubscribe fn so
     // the caller can clean up (e.g. in StrictMode double-invoke).
@@ -168,3 +172,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 }));
+
+/**
+ * Convenience selector for the currently authenticated user. Returns `null`
+ * until the profile has hydrated. Components rendered inside `RequireAuth` can
+ * treat a `null` here as "not ready yet" and bail early — it never stays null
+ * for an authenticated session. Use this instead of the mock `getCurrentUser()`
+ * so the UI always reflects the real Firebase identity.
+ */
+export const useCurrentUser = () => useAuthStore((s) => s.user);

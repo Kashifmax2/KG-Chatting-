@@ -6,18 +6,51 @@
 
 export type PresenceStatus = "online" | "idle" | "dnd" | "offline";
 
+/** Who a given profile facet is visible to (Phase 05 — Profile Privacy). */
+export type PrivacyLevel = "everyone" | "friends" | "nobody";
+
+/** Profile privacy controls (Phase 05 — Profile Privacy). */
+export interface ProfilePrivacy {
+  /** Who can view the full profile. */
+  profileVisibility: PrivacyLevel;
+  /** Who can see the user's presence status. */
+  statusVisibility: PrivacyLevel;
+  /** Who can see the user's activity. */
+  activityVisibility: PrivacyLevel;
+  /** Who may send this user a friend request. */
+  friendRequests: PrivacyLevel;
+}
+
+/** A single external/social link shown on a profile. */
+export interface SocialLink {
+  /** User-facing label, e.g. "GitHub" or "Portfolio". */
+  label: string;
+  /** Fully-qualified URL. */
+  url: string;
+}
+
 export interface User {
   id: string;
   username: string;
   displayName: string;
   discriminator: string; // e.g. "0001"
   avatarUrl?: string;
+  /** Uploaded banner image (Cloudinary); falls back to `bannerColor` when unset. */
+  bannerUrl?: string;
   bannerColor: string;
+  /** Cosmetic accent colour for the profile (CSS colour string). */
+  accentColor?: string;
   status: PresenceStatus;
   customStatus?: string;
   bio?: string;
   pronouns?: string;
+  country?: string;
+  language?: string;
+  website?: string;
+  socialLinks?: SocialLink[];
   badges: UserBadge[];
+  /** Populated for the live signed-in user; may be absent for seed/other users. */
+  privacy?: ProfilePrivacy;
   createdAt: string;
 }
 
