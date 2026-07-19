@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ---------- Light theme ---------- */
+    --background: 220 13% 95%;
+    --foreground: 222 14% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 14% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 14% 12%;
+
+    --primary: 235 86% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 91%;
+    --secondary-foreground: 222 14% 20%;
+
+    --muted: 220 13% 88%;
+    --muted-foreground: 220 9% 40%;
+
+    --accent: 220 13% 90%;
+    --accent-foreground: 222 14% 20%;
+
+    --destructive: 359 66% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 235 86% 65%;
+
+    --brand: 235 86% 65%;
+    --brand-hover: 235 60% 55%;
+    --brand-foreground: 0 0% 100%;
+
+    --status-online: 145 63% 42%;
+    --status-idle: 38 92% 55%;
+    --status-dnd: 359 66% 55%;
+    --status-offline: 220 9% 55%;
+
+    --rail: 220 13% 88%;
+    --sidebar: 220 13% 92%;
+    --chat: 0 0% 100%;
+    --elevated: 0 0% 100%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* ---------- Dark theme (default) ---------- */
+    --background: 223 7% 13%;
+    --foreground: 210 11% 93%;
+
+    --card: 220 7% 17%;
+    --card-foreground: 210 11% 93%;
+
+    --popover: 220 8% 10%;
+    --popover-foreground: 210 11% 93%;
+
+    --primary: 235 86% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 7% 20%;
+    --secondary-foreground: 210 11% 90%;
+
+    --muted: 220 7% 22%;
+    --muted-foreground: 220 8% 62%;
+
+    --accent: 220 7% 24%;
+    --accent-foreground: 210 11% 93%;
+
+    --destructive: 359 66% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 7% 24%;
+    --input: 220 7% 26%;
+    --ring: 235 86% 65%;
+
+    --brand: 235 86% 65%;
+    --brand-hover: 235 72% 70%;
+    --brand-foreground: 0 0% 100%;
+
+    --status-online: 145 63% 49%;
+    --status-idle: 38 92% 60%;
+    --status-dnd: 359 82% 62%;
+    --status-offline: 220 8% 45%;
+
+    --rail: 225 8% 9%;
+    --sidebar: 223 7% 15%;
+    --chat: 223 7% 19%;
+    --elevated: 220 8% 12%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Custom scrollbars — thin and themed like a native app */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .glass {
+    @apply bg-background/70 backdrop-blur-xl;
+  }
+
+  /* Subtle gradient backdrop used on auth + explore hero surfaces */
+  .brand-gradient {
+    background-image: radial-gradient(
+        1200px circle at 0% 0%,
+        hsl(235 86% 65% / 0.25),
+        transparent 40%
+      ),
+      radial-gradient(
+        1000px circle at 100% 100%,
+        hsl(280 86% 65% / 0.2),
+        transparent 40%
+      );
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}

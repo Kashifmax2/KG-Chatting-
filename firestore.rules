@@ -1,0 +1,121 @@
+rules_version = '2';
+
+// KG Chatting — Cloud Firestore security rules.
+//
+// Phase 03 scaffolds a deny-by-default posture with ownership and membership
+// helpers. Real per-collection logic is tightened as each feature ships in
+// later phases. The guiding rule: never allow an unrestricted write.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helpers -----------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Field-level guard: a write may not change the `id`/`ownerId` of a doc.
+    function ownerUnchanged() {
+      return !('ownerId' in request.resource.data.diff(resource.data).affectedKeys());
+    }
+
+    // ---- Users -------------------------------------------------------------
+    // Any signed-in user may read profiles; only the owner may write their own.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
+    }
+
+    // ---- Settings ----------------------------------------------------------
+    // Strictly private to the owning user.
+    match /settings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ---- Friends & requests ------------------------------------------------
+    match /friends/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /friend_requests/{docId} {
+      // Visible to sender or recipient; created only by the sender.
+      allow read: if isSignedIn() &&
+        (resource.data.fromId == request.auth.uid ||
+         resource.data.toId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.fromId == request.auth.uid;
+      allow update, delete: if isSignedIn() &&
+        (resource.data.fromId == request.auth.uid ||
+         resource.data.toId == request.auth.uid);
+    }
+
+    // ---- Direct messages ---------------------------------------------------
+    match /direct_messages/{dmId} {
+      allow read, write: if isSignedIn() &&
+        request.auth.uid in resource.data.participantIds;
+
+      match /dm_messages/{messageId} {
+        allow read: if isSignedIn() &&
+          request.auth.uid in get(/databases/$(database)/documents/direct_messages/$(dmId)).data.participantIds;
+        allow create: if isSignedIn() &&
+          request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isSignedIn() &&
+          resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    // ---- Servers, members, channels ---------------------------------------
+    match /servers/{serverId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid && ownerUnchanged();
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /server_members/{memberId} {
+        allow read: if isSignedIn();
+        // A user may add/remove only their own membership doc for now.
+        allow write: if isOwner(memberId);
+      }
+    }
+
+    match /channels/{channelId} {
+      allow read: if isSignedIn();
+      // Channel mutation is gated by server ownership/roles in a later phase.
+      allow write: if false;
+
+      match /channel_messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    // ---- Notifications -----------------------------------------------------
+    // Private to the recipient.
+    match /notifications/{docId} {
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+    }
+
+    // ---- Search index / uploads metadata ----------------------------------
+    match /search_index/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false; // maintained server-side only
+    }
+
+    match /uploads/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ---- Deny everything else ---------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

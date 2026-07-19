@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// KG Chatting — Firebase Storage security rules.
+//
+// Deny-by-default. Uploads must be authenticated, owned by the requesting user,
+// size-bounded and of an allowed content type. These mirror the client-side
+// validators in src/validators — the client is never trusted alone.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/(png|jpeg|gif|webp)');
+    }
+
+    function underMB(mb) {
+      return request.resource.size < mb * 1024 * 1024;
+    }
+
+    // Per-user avatars and banners: only the owner may write, max 8 MB, images.
+    match /users/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isImage() && underMB(8);
+      allow delete: if isOwner(userId);
+    }
+
+    // Message/channel attachments, namespaced by uploader.
+    match /uploads/{userId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && underMB(50);
+      allow delete: if isOwner(userId);
+    }
+
+    // Deny everything else.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
