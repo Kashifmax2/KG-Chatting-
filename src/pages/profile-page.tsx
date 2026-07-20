@@ -78,9 +78,7 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-black">{user.displayName}</h2>
                   <UserBadges badges={user.badges} />
                 </div>
-                <p className="text-muted-foreground">
-                  {user.username}#{user.discriminator}
-                </p>
+                <p className="text-muted-foreground">{user.username}</p>
 
                 <Separator className="my-4" />
 

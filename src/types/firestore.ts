@@ -12,9 +12,9 @@
 import type { Timestamp } from "firebase/firestore";
 import type {
   ChannelType,
-  FriendStatus,
   NotificationType,
   PresenceStatus,
+  PrivacyLevel,
   ProfilePrivacy,
   SocialLink,
   UserBadge,
@@ -61,18 +61,63 @@ export interface UserDoc extends BaseDoc {
   lastSeen: Timestamp;
 }
 
+/**
+ * One directed edge of a friendship (Phase 06, dual-doc mirror). A friendship
+ * between A and B is stored as two docs — `{A}_{B}` owned by A and `{B}_{A}`
+ * owned by B — so every list query is a simple `where ownerId == uid`. Edges
+ * exist only for accepted friendships; pending/declined/cancelled live in
+ * `friend_requests`. Per-owner metadata (nickname/note/favorite) lives on the
+ * owner's own edge, so each side customises independently.
+ */
 export interface FriendDoc extends BaseDoc {
-  /** Owner of this friend edge. */
+  /** Owner of this friend edge (the query key). */
   ownerId: string;
   /** The other user in the relationship. */
   userId: string;
-  status: FriendStatus;
+  /** Always "accepted" — an edge is only written once a request is accepted. */
+  status: "accepted";
+  /** When the friendship was established (mirrors on both edges). */
+  since: Timestamp;
+  /** Owner-private nickname for the friend. */
+  nickname?: string;
+  /** Owner-private free-form note about the friend. */
+  note?: string;
+  /** Owner-private "favorite" flag for pinning/sorting. */
+  favorite: boolean;
 }
+
+/** Lifecycle states a friend request moves through. */
+export type FriendRequestStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "cancelled";
 
 export interface FriendRequestDoc extends BaseDoc {
   fromId: string;
   toId: string;
-  status: "pending" | "accepted" | "declined" | "cancelled";
+  status: FriendRequestStatus;
+}
+
+/**
+ * A block edge (Phase 06). Owner-private; blocking removes any friendship and
+ * cancels pending requests, and prevents new requests in either direction.
+ */
+export interface BlockedUserDoc extends BaseDoc {
+  /** The user who created the block (query key). */
+  ownerId: string;
+  /** The user who is blocked. */
+  targetId: string;
+}
+
+/**
+ * Per-user friend settings (Phase 06). Owner-private. `allowRequestsFrom`
+ * mirrors the profile `privacy.friendRequests` control so request-sending can
+ * be gated without reading the whole user doc.
+ */
+export interface FriendSettingsDoc extends BaseDoc {
+  ownerId: string;
+  allowRequestsFrom: PrivacyLevel;
 }
 
 export interface DirectMessageDoc extends BaseDoc {

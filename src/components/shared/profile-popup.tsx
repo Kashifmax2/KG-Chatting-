@@ -2,15 +2,35 @@ import { motion } from "framer-motion";
 import { MessageCircle, MoreVertical, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { UserBadges } from "@/components/shared/user-badges";
 import { statusMeta } from "@/components/shared/status-dot";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
+/** A single action rendered in the card's overflow (three-dot) menu. */
+export interface ProfileCardAction {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onSelect: () => void;
+  destructive?: boolean;
+}
+
 interface ProfilePopupCardProps {
   user: User;
   onMessage?: () => void;
+  /** Wires the quick "add friend" button; hidden when omitted. */
+  onAddFriend?: () => void;
+  /** Actions for the overflow menu; the three-dot button hides when empty. */
+  actions?: ProfileCardAction[];
   className?: string;
   compact?: boolean;
 }
@@ -22,9 +42,12 @@ interface ProfilePopupCardProps {
 export function ProfilePopupCard({
   user,
   onMessage,
+  onAddFriend,
+  actions,
   className,
   compact,
 }: ProfilePopupCardProps) {
+  const hasMenu = Boolean(actions && actions.length > 0);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -52,14 +75,46 @@ export function ProfilePopupCard({
             ringClassName="border-popover"
             className="rounded-full ring-[6px] ring-popover"
           />
-          {!compact && (
+          {!compact && (onAddFriend || hasMenu) && (
             <div className="mb-1 flex gap-1">
-              <Button size="icon-sm" variant="subtle" aria-label="Add friend">
-                <UserPlus className="h-4 w-4" />
-              </Button>
-              <Button size="icon-sm" variant="subtle" aria-label="More">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+              {onAddFriend && (
+                <Button
+                  size="icon-sm"
+                  variant="subtle"
+                  aria-label="Add friend"
+                  onClick={onAddFriend}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+              )}
+              {hasMenu && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon-sm" variant="subtle" aria-label="More">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="z-[70] w-48">
+                    {actions!.map((action, i) => {
+                      const Icon = action.icon;
+                      const prevDestructive =
+                        i > 0 && !actions![i - 1].destructive && action.destructive;
+                      return (
+                        <div key={action.key}>
+                          {prevDestructive && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            variant={action.destructive ? "destructive" : "default"}
+                            onSelect={action.onSelect}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {action.label}
+                          </DropdownMenuItem>
+                        </div>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           )}
         </div>
@@ -69,12 +124,10 @@ export function ProfilePopupCard({
             <h3 className="text-lg font-bold">{user.displayName}</h3>
             <UserBadges badges={user.badges} />
           </div>
-          <p className="text-sm text-muted-foreground">
-            {user.username}#{user.discriminator}
-          </p>
-
-          {user.customStatus && (
-            <p className="mt-2 text-sm">{user.customStatus}</p>
+          {user.customStatus?.trim() && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {user.customStatus}
+            </p>
           )}
 
           <Separator className="my-3" />

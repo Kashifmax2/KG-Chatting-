@@ -22,29 +22,41 @@ export function UserPanel() {
   // practice; guard anyway for the brief hydration window on hard refresh.
   if (!user) return null;
 
-  return (
-    <div className="flex items-center gap-1 bg-elevated/60 px-2 py-2">
-      <button
-        onClick={() => openModal("settings")}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-accent"
-      >
-        <UserAvatar user={user} size="sm" showStatus ringClassName="border-elevated" />
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-semibold">{user.displayName}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {user.customStatus ?? `${user.username}#${user.discriminator}`}
-          </p>
-        </div>
-      </button>
+  const secondary = user.customStatus ?? user.username;
 
-      <div className="flex items-center">
+  return (
+    <div className="flex items-center gap-0.5 bg-elevated/60 px-2 py-2">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => openModal("settings")}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-accent"
+          >
+            <UserAvatar
+              user={user}
+              size="sm"
+              showStatus
+              ringClassName="border-elevated"
+            />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-sm font-semibold">{user.displayName}</p>
+              <p className="truncate text-xs text-muted-foreground">{secondary}</p>
+            </div>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{secondary}</TooltipContent>
+      </Tooltip>
+
+      <div className="flex shrink-0 items-center">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               size="icon-sm"
               variant="ghost"
               onClick={() => setMuted((m) => !m)}
-              className={cn(muted && "text-destructive")}
+              className={cn("h-8 w-8", muted && "text-destructive")}
+              aria-label={muted ? "Unmute" : "Mute"}
+              aria-pressed={muted}
             >
               {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
@@ -58,7 +70,9 @@ export function UserPanel() {
               size="icon-sm"
               variant="ghost"
               onClick={() => setDeafened((d) => !d)}
-              className={cn(deafened && "text-destructive")}
+              className={cn("h-8 w-8", deafened && "text-destructive")}
+              aria-label={deafened ? "Undeafen" : "Deafen"}
+              aria-pressed={deafened}
             >
               {deafened ? (
                 <VolumeX className="h-4 w-4" />
@@ -76,6 +90,8 @@ export function UserPanel() {
               size="icon-sm"
               variant="ghost"
               onClick={() => openModal("settings")}
+              className="h-8 w-8"
+              aria-label="User Settings"
             >
               <Settings className="h-4 w-4" />
             </Button>

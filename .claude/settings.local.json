@@ -10,7 +10,11 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/)",
       "Bash(curl -s \"http://localhost:5173/src/main.tsx\" -o /dev/null -w \"main.tsx: HTTP %{http_code}\\\\n\")",
       "Bash(npx tsc *)",
-      "Bash(echo \"TSC EXIT: $?\")"
+      "Bash(echo \"TSC EXIT: $?\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Phase 05 Complete — User Profile System *)",
+      "Bash(xargs grep -ln \"createBrowserRouter\\\\|<Routes>\\\\|<Route \")"
     ]
   }
 }

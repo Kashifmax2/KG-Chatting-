@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Search } from "lucide-react";
-import { friends } from "@/data/social";
-import { getUser } from "@/data/users";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuthStore } from "@/stores/auth-store";
+import { useFriendsStore, useFriends } from "@/stores/friends-store";
 
 interface Props {
   open: boolean;
@@ -26,7 +26,18 @@ export function InviteModal({ open, onClose }: Props) {
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const copiedTimer = useRef<number | undefined>(undefined);
 
+  const uid = useAuthStore((s) => s.user?.id ?? null);
+  const subscribe = useFriendsStore((s) => s.subscribe);
+  const friendsList = useFriends();
+
   useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+
+  // Ensure the friend graph is live while the modal is open (idempotent —
+  // shares listeners with the friends page if it's already mounted).
+  useEffect(() => {
+    if (!open || !uid) return;
+    return subscribe(uid);
+  }, [open, uid, subscribe]);
 
   const copy = async () => {
     try {
@@ -39,10 +50,8 @@ export function InviteModal({ open, onClose }: Props) {
     copiedTimer.current = window.setTimeout(() => setCopied(false), 1800);
   };
 
-  const list = friends
-    .filter((f) => f.status === "friend")
-    .map((f) => getUser(f.userId))
-    .filter((u): u is NonNullable<typeof u> => Boolean(u))
+  const list = friendsList
+    .map((f) => f.user)
     .filter((u) =>
       u.displayName.toLowerCase().includes(query.trim().toLowerCase())
     );
@@ -83,7 +92,8 @@ export function InviteModal({ open, onClose }: Props) {
                     onClick={() =>
                       setInvited((prev) => {
                         const next = new Set(prev);
-                        next.has(u.id) ? next.delete(u.id) : next.add(u.id);
+                        if (next.has(u.id)) next.delete(u.id);
+                        else next.add(u.id);
                         return next;
                       })
                     }

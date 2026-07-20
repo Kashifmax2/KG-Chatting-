@@ -1,8 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { Bell, Plus, Users } from "lucide-react";
-import { dmChannels, getDMMessages } from "@/data/dms";
-import { getUser } from "@/data/users";
+import { getDMMessages } from "@/data/dms";
 import { CURRENT_USER_ID } from "@/data/users";
+import { useDMStore } from "@/stores/dm-store";
 import { useUnreadCount } from "@/stores/notifications-store";
 import { UserPanel } from "@/components/layout/user-panel";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -12,15 +12,11 @@ import { Button } from "@/components/ui/button";
 import { cn, timeAgo } from "@/lib/utils";
 import type { DMChannel } from "@/types";
 
-function dmTitle(dm: DMChannel): string {
-  if (dm.isGroup) return dm.name ?? "Group DM";
-  const other = dm.participantIds.find((id) => id !== CURRENT_USER_ID);
-  return getUser(other ?? "")?.displayName ?? "Unknown";
-}
-
 function DMRow({ dm }: { dm: DMChannel }) {
+  const resolveUser = useDMStore((s) => s.resolveUser);
   const other = dm.participantIds.find((id) => id !== CURRENT_USER_ID);
-  const user = getUser(other ?? "");
+  const user = resolveUser(other ?? "");
+  const title = dm.isGroup ? dm.name ?? "Group DM" : user?.displayName ?? "Unknown";
   const messages = getDMMessages(dm.id);
   const last = messages[messages.length - 1];
 
@@ -45,7 +41,7 @@ function DMRow({ dm }: { dm: DMChannel }) {
       ) : null}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-1">
-          <span className="truncate text-sm font-semibold">{dmTitle(dm)}</span>
+          <span className="truncate text-sm font-semibold">{title}</span>
           {dm.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />}
         </div>
         {last && (
@@ -66,6 +62,7 @@ function DMRow({ dm }: { dm: DMChannel }) {
 
 export function HomeSidebar() {
   const unreadCount = useUnreadCount();
+  const channels = useDMStore((s) => s.channels);
 
   return (
     <div className="flex h-full w-60 flex-col bg-sidebar">
@@ -122,7 +119,7 @@ export function HomeSidebar() {
         </div>
 
         <div className="space-y-0.5">
-          {dmChannels.map((dm) => (
+          {channels.map((dm) => (
             <DMRow key={dm.id} dm={dm} />
           ))}
         </div>

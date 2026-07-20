@@ -9,6 +9,8 @@ export const COLLECTIONS = {
   users: "users",
   friends: "friends",
   friendRequests: "friend_requests",
+  blockedUsers: "blocked_users",
+  friendSettings: "friend_settings",
   directMessages: "direct_messages",
   dmMessages: "dm_messages",
   servers: "servers",

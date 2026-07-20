@@ -8,9 +8,9 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import { getDMChannel } from "@/data/dms";
-import { getUser, CURRENT_USER_ID } from "@/data/users";
+import { CURRENT_USER_ID } from "@/data/users";
 import { useChatStore, EMPTY_TYPING } from "@/stores/chat-store";
+import { useDMStore } from "@/stores/dm-store";
 import { useSimulatedTyping } from "@/hooks/use-simulated-typing";
 import { useUIStore } from "@/stores/ui-store";
 import { HomeSidebar } from "@/components/layout/home-sidebar";
@@ -26,10 +26,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { statusMeta } from "@/components/shared/status-dot";
+import type { User } from "@/types";
 
 export default function DMPage() {
   const { dmId } = useParams();
-  const dm = dmId ? getDMChannel(dmId) : undefined;
+  const channels = useDMStore((s) => s.channels);
+  const resolveUser = useDMStore((s) => s.resolveUser);
+  const dm = dmId ? channels.find((c) => c.id === dmId) : undefined;
 
   const ensureChannel = useChatStore((s) => s.ensureChannel);
   const messages = useChatStore((s) => (dmId ? s.messages[dmId] : undefined));
@@ -52,7 +55,7 @@ export default function DMPage() {
 
   if (!dm) return <Navigate to="/friends" replace />;
 
-  const other = getUser(otherId ?? "");
+  const other = resolveUser(otherId ?? "");
   const title = dm.isGroup ? dm.name ?? "Group" : other?.displayName ?? "Unknown";
 
   return (
@@ -102,7 +105,7 @@ export default function DMPage() {
             <MessageList
               channelId={dm.id}
               messages={messages ?? []}
-              header={<DMIntro title={title} isGroup={dm.isGroup} otherId={otherId} />}
+              header={<DMIntro title={title} isGroup={dm.isGroup} other={other} />}
             />
             <Composer
               channelId={dm.id}
@@ -126,7 +129,7 @@ export default function DMPage() {
                 </p>
                 <div className="space-y-0.5">
                   {dm.participantIds.map((id) => {
-                    const u = getUser(id);
+                    const u = resolveUser(id);
                     if (!u) return null;
                     return (
                       <div
@@ -179,13 +182,12 @@ function IconBtn({
 function DMIntro({
   title,
   isGroup,
-  otherId,
+  other,
 }: {
   title: string;
   isGroup: boolean;
-  otherId?: string;
+  other?: User;
 }) {
-  const other = getUser(otherId ?? "");
   return (
     <div className="px-4 pb-2 pt-6">
       {!isGroup && other ? (
